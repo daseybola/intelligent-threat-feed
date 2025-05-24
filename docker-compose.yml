@@ -1,31 +1,38 @@
 version: '3.8'
+
 services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    env_file: .env
+    depends_on:
+      - db
+    volumes:
+      - .:/app
+
   db:
-    image: postgres:13
-    restart: always
+    image: postgres:14
     environment:
-      POSTGRES_DB: threatdb
-      POSTGRES_USER: threatuser
-      POSTGRES_PASSWORD: threatpass
+      POSTGRES_DB: threat_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 
   grafana:
-    build: ./grafana
+    image: grafana/grafana
     ports:
       - "3000:3000"
-    depends_on:
-      - db
-
-  app:
-    build: ./app
-    depends_on:
-      - db
-    env_file:
-      - .env
     volumes:
-      - ./app:/app
-    command: ["python3", "main.py"]
+      - grafana-storage:/var/lib/grafana
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - db
 
 volumes:
   pgdata:
+  grafana-storage:
