@@ -1,43 +1,51 @@
-version: '3.9'
+version: '3.8'
+
 services:
-  web:
-    build: .
+
+  collector:
+    build: ./collector
+    container_name: threat_collector
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      - db
+    restart: always
+
+  api:
+    build: ./api
+    container_name: threat_api
     ports:
       - "8000:8000"
-    env_file: .env
     depends_on:
       - db
-      - redis
-      - elasticsearch
-    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
-
-  celery:
-    build: .
-    env_file: .env
-    depends_on:
-      - redis
-      - db
-    command: celery -A tasks.worker worker --loglevel=info
+    restart: always
 
   db:
-    image: postgres:13
-    restart: always
+    image: postgres:15
+    container_name: threat_db
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: threats
+      POSTGRES_DB: threatdb
+      POSTGRES_USER: threatuser
+      POSTGRES_PASSWORD: threatpass
+    volumes:
+      - pgdata:/var/lib/postgresql/data
     ports:
       - "5432:5432"
+    restart: always
 
-  redis:
-    image: redis:alpine
+  grafana:
+    image: grafana/grafana-oss
+    container_name: threat_grafana
     ports:
-      - "6379:6379"
+      - "3000:3000"
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    depends_on:
+      - db
+    restart: always
 
-  elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.9
-    environment:
-      discovery.type: single-node
-      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
-    ports:
-      - "9200:9200"
+volumes:
+  pgdata:
+  grafana-storage:
