@@ -2,14 +2,18 @@ version: '3.8'
 
 services:
   api:
-    build: .
+    build:
+      context: .
     ports:
       - "8000:8000"
     env_file: .env
     depends_on:
       - db
     volumes:
-      - .:/app
+      # Only mount source code for hot-reloading in development
+      # Remove if you don't want it to overwrite built code!
+      - ./src:/app  # assuming your source code is in a subfolder 'src'
+    # If your Dockerfile handles /app, avoid overwriting it entirely!
 
   db:
     image: postgres:14
