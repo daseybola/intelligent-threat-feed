@@ -1,51 +1,31 @@
 version: '3.8'
-
 services:
-
-  collector:
-    build: ./collector
-    container_name: threat_collector
-    env_file:
-      - .env
-    volumes:
-      - ./data:/app/data
-    depends_on:
-      - db
-    restart: always
-
-  api:
-    build: ./api
-    container_name: threat_api
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    restart: always
-
   db:
-    image: postgres:15
-    container_name: threat_db
+    image: postgres:13
+    restart: always
     environment:
       POSTGRES_DB: threatdb
       POSTGRES_USER: threatuser
       POSTGRES_PASSWORD: threatpass
     volumes:
       - pgdata:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    restart: always
 
   grafana:
-    image: grafana/grafana-oss
-    container_name: threat_grafana
+    build: ./grafana
     ports:
       - "3000:3000"
-    volumes:
-      - grafana-storage:/var/lib/grafana
     depends_on:
       - db
-    restart: always
+
+  app:
+    build: ./app
+    depends_on:
+      - db
+    env_file:
+      - .env
+    volumes:
+      - ./app:/app
+    command: ["python3", "main.py"]
 
 volumes:
   pgdata:
-  grafana-storage:
